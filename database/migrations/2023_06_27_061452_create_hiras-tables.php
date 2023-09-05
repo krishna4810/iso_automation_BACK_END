@@ -13,6 +13,7 @@ return new class extends Migration {
     {
         Schema::create('hiras', function (Blueprint $table) {
             $table->string('id')->primary();
+            $table->integer('user_id');
             $table->string('doc_number');
             $table->string('department');
             $table->string('plant');
@@ -26,14 +27,19 @@ return new class extends Migration {
             $table->string('start_date');
             $table->string('gross_likelihood');
             $table->string('gross_impact');
+            $table->string('gross_ranking_value');
             $table->string('gross_ranking');
             $table->string('existing_control')->nullable();
             $table->string('completion_date')->nullable();
+            $table->string('mitigation_measures')->nullable();
+            $table->string('further_action_required')->nullable();
             $table->string('routine_activity')->nullable();
             $table->string('workers_involved')->nullable();
             $table->string('residual_likelihood')->nullable();
             $table->string('residual_impact')->nullable();
+            $table->string('residual_ranking_value')->nullable();
             $table->string('residual_ranking')->nullable();
+            $table->string('status');
             $table->timestamps();
         });
 

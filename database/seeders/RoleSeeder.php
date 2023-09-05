@@ -51,7 +51,7 @@ class RoleSeeder extends Seeder
 
         Role::create([
             'id' => 3,
-            'role_name' => 'Creators',
+            'role_name' => 'Creator',
             'add_user' => false,
             'master_data' => false,
             'make_forms' => false,
