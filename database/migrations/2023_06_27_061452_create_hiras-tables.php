@@ -13,7 +13,8 @@ return new class extends Migration {
     {
         Schema::create('hiras', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->integer('user_id');
+            $table->string('creator_name');
+            $table->string('user_id');
             $table->string('doc_number');
             $table->string('department');
             $table->string('plant');

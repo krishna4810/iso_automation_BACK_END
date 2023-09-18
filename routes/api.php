@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\api\CommentController;
 use App\Http\Controllers\api\HiraController;
 use App\Http\Controllers\api\UserController;
 use Illuminate\Http\Request;
@@ -36,9 +37,12 @@ Route::get('checkRoles/{user_name}', [UserController::class, 'checkRoles']);
 // HIRA API CALLS
 Route::get('getDocumentNumber', [HiraController::class, 'getDocumentNumber']);
 Route::get('getHiraForms', [HiraController::class, 'getHiraForms']);
-Route::post('addHira', [HiraController::class, 'addHira']);
 Route::get('getHira', [HiraController::class, 'getHira']);
+Route::get('getComment', [CommentController::class, 'getComment']);
+Route::post('addHira', [HiraController::class, 'addHira']);
+Route::post('addComment', [CommentController::class, 'addComment']);
 Route::post('addNewField', [HiraController::class, 'addNewField']);
+Route::put('changeStatus', [HiraController::class, 'changeStatus']);
 Route::delete('deleteField', [HiraController::class, 'deleteField']);
 
 

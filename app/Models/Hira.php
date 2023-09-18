@@ -12,6 +12,7 @@ class Hira extends Model
     protected $fillable = [
         'department',
         'doc_number',
+        'creator_name',
         'user_id',
         'date',
         'year',

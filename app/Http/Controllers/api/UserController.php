@@ -24,7 +24,7 @@ class UserController extends Controller
 
     public function getRoles()
     {
-        $roles = Role::all();
+        $roles = Role::whereNotIn('id', [8])->get();
         if ($roles->isEmpty()) {
             return response()->json(['message' => 'Failed to load Roles'], 400);
         } else {
@@ -37,7 +37,7 @@ class UserController extends Controller
         $users = DB::table('users')
             ->join('roles', 'users.role_id', '=', 'roles.id')
             ->select('users.user_name', 'users.role_id', 'roles.role_name')
-            ->orderBy('users.id','DESC')
+            ->orderBy('users.id', 'DESC')
             ->get();
 
         if (!$users) {
