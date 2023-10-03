@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\api\CommentController;
+use App\Http\Controllers\api\EaiController;
 use App\Http\Controllers\api\HiraController;
 use App\Http\Controllers\api\UserController;
 use Illuminate\Http\Request;
@@ -44,5 +45,11 @@ Route::post('addComment', [CommentController::class, 'addComment']);
 Route::post('addNewField', [HiraController::class, 'addNewField']);
 Route::put('changeStatus', [HiraController::class, 'changeStatus']);
 Route::delete('deleteField', [HiraController::class, 'deleteField']);
+
+// EAI API CALLS
+Route::get('getEAIDocumentNumber', [EaiController::class, 'getDocumentNumber']);
+Route::post('addEai', [EaiController::class, 'addEai']);
+Route::get('getEai', [EaiController::class, 'getEai']);
+
 
 

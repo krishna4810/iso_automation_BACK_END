@@ -5,25 +5,20 @@ namespace App\Http\Controllers\api;
 use App\Http\Controllers\Controller;
 use App\Models\Eai;
 use App\Models\Hira;
-use App\Models\HiraForm;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
-class HiraController extends Controller
+class EaiController extends Controller
 {
-
-
     public function getDocumentNumber(Request $request)
     {
         $department = $request->input('department');
         $plant = $request->input('plant');
         $unit = $request->input('unit');
         $year = $request->input('year');
-        $values = DB::table('hiras')
+        $values = DB::table('eais')
             ->where('department', $department)
-            ->where('   unit', $unit)
+            ->where('unit', $unit)
             ->where('year', $year)
             ->where('plant', $plant)
             ->get();
@@ -39,9 +34,9 @@ class HiraController extends Controller
         ]);
     }
 
-    public function addHira(Request $request)
+    public function addEai(Request $request)
     {
-        $hira = Hira::where('doc_number', $request->docNumber)->first();
+        $Eai = Eai::where('doc_number', $request->docNumber)->first();
         $data = [
             'department' => $request->input('department'),
             'doc_number' => $request->input('docNumber'),
@@ -72,20 +67,18 @@ class HiraController extends Controller
             'residual_ranking' => $request->input('r_ranking'),
             'status' => $request->input('status'),
         ];
-        Hira::updateOrCreate(
+        Eai::updateOrCreate(
             ['doc_number' => $request->input('docNumber')],
             $data
         );
-
-        if ($hira) {
-            return response()->json(['message' => "Hira Function Updated Successfully"]);
+        if ($Eai) {
+            return response()->json(['message' => "EAI Function Updated Successfully"]);
         } else {
-            return response()->json(['message' => "Hira Function added Successfully"]);
+            return response()->json(['message' => "EAI Function added Successfully"]);
         }
-
     }
 
-    public function getHira(Request $request)
+    public function getEai(Request $request)
     {
         $role_id = $request->input('role_id');
         $status = $request->input('status');
@@ -93,7 +86,7 @@ class HiraController extends Controller
         $department = $request->input('department');
         $plant = $request->input('plant');
         $unit = $request->input('division');
-        $query = DB::table('hiras')->orderBy('id', 'DESC');
+        $query = DB::table('eais')->orderBy('id', 'DESC');
         if ($role_id == 3) {
             $query->where('user_id', $user_id);
         } elseif ($role_id == 4) {
@@ -117,83 +110,8 @@ class HiraController extends Controller
         } elseif ($role_id == 7) {
             $query->where('status', $status);
         }
-        $hiras = $query->get();
-        return response()->json($hiras);
-    }
-
-    public function getHiraForms()
-    {
-        $form = DB::table('hira_forms')
-            ->select('hira_forms.id', 'hira_forms.name', 'hira_forms.category', 'hira_forms.column_value')
-            ->get();
-        return response()->json($form);
-    }
-
-    public function changeStatus(Request $request)
-    {
-        $id = $request->input('id');
-        $status = $request->input('status');
-
-        // Check if the first character of $id is 'E' or 'H' and select the model accordingly.
-        $model = null;
-        if (strpos($id, 'E') === 0) {
-            $model = EAI::find($id);
-        } elseif (strpos($id, 'H') === 0) {
-            $model = Hira::find($id);
-        }
-
-        if (!$model) {
-            return response()->json(['message' => 'Record not found'], 404);
-        }
-
-        $model->status = $status;
-        $model->save();
-
-        return response()->json(['message' => 'You have Reviewed Successfully']);
-    }
-
-
-    public function addNewField(Request $request)
-    {
-        $tableName = 'hiras';
-        $columnName = $request->input('column_value');
-        $columnType = 'string';
-        $isNullable = true;
-
-        // Check if the column already exists in the table
-        if (!Schema::hasColumn($tableName, $columnName)) {
-            Schema::table($tableName, function (Blueprint $table) use ($columnName, $columnType, $isNullable) {
-                $column = $table->$columnType($columnName);
-                if ($isNullable) {
-                    $column->nullable();
-                }
-            });
-            $newForm = new HiraForm();
-            $newForm->name = $request->input('name');
-            $newForm->column_value = $request->input('column_value');
-            $newForm->category = $request->input('category');
-            $newForm->save();
-            return response()->json(['message' => 'Field added successfully.'], 200);
-        }
-
-        return response()->json(['message' => 'The ' . $columnName . ' already exists in the table.'], 400);
-    }
-
-    public function deleteField(Request $request)
-    {
-        $columnName = $request->input('column');
-        $form_id = $request->input('id');
-        $tableName = 'hiras';
-
-        // Check if the column exists in the table
-        if (Schema::hasColumn($tableName, $columnName)) {
-            Schema::table($tableName, function (Blueprint $table) use ($columnName) {
-                $table->dropColumn($columnName);
-            });
-            DB::table('hira_forms')->where('id', $form_id)->delete();
-            return response()->json(['message' => 'Field deleted successfully.'], 200);
-        }
-        return response()->json(['message' => 'The ' . $columnName . ' does not exist in the table.'], 400);
+        $eais = $query->get();
+        return response()->json($eais);
     }
 
 
