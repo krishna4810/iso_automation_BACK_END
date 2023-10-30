@@ -133,22 +133,17 @@ class HiraController extends Controller
     {
         $id = $request->input('id');
         $status = $request->input('status');
-
-        // Check if the first character of $id is 'E' or 'H' and select the model accordingly.
         $model = null;
         if (strpos($id, 'E') === 0) {
             $model = EAI::find($id);
         } elseif (strpos($id, 'H') === 0) {
             $model = Hira::find($id);
         }
-
         if (!$model) {
             return response()->json(['message' => 'Record not found'], 404);
         }
-
         $model->status = $status;
         $model->save();
-
         return response()->json(['message' => 'You have Reviewed Successfully']);
     }
 
@@ -159,8 +154,6 @@ class HiraController extends Controller
         $columnName = $request->input('column_value');
         $columnType = 'string';
         $isNullable = true;
-
-        // Check if the column already exists in the table
         if (!Schema::hasColumn($tableName, $columnName)) {
             Schema::table($tableName, function (Blueprint $table) use ($columnName, $columnType, $isNullable) {
                 $column = $table->$columnType($columnName);

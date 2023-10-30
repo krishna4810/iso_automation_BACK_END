@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\api\CommentController;
+use App\Http\Controllers\api\DashboardController;
 use App\Http\Controllers\api\EaiController;
 use App\Http\Controllers\api\HiraController;
 use App\Http\Controllers\api\UserController;
@@ -50,6 +51,11 @@ Route::delete('deleteField', [HiraController::class, 'deleteField']);
 Route::get('getEAIDocumentNumber', [EaiController::class, 'getDocumentNumber']);
 Route::post('addEai', [EaiController::class, 'addEai']);
 Route::get('getEai', [EaiController::class, 'getEai']);
+
+// Dashboard API CALLS
+Route::get('getFilterParam', [DashboardController::class, 'getFilterParam']);
+Route::get('filterDashboard', [DashboardController::class, 'filterDashboard']);
+
 
 
 
