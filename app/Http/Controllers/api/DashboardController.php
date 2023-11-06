@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Eai;
 use App\Models\Hira;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -41,33 +42,63 @@ class DashboardController extends Controller
         $year = $request->input('year');
         $plant = $request->input('plant');
         $department = $request->input('department');
-        $countData = $this->getCount($year, $department, $plant);
-//        $countGraphData = $this->getGraphData();
-        return response() -> json (
-            $countData,
-//            $countGraphData
-        );
+
+        $hira = DB::table('hiras')->where('year', $year)
+            ->where('department', $department)
+            ->where('plant', $plant)
+            ->whereIn('status', ['Pre-Activity Details Accepted', 'Post-Activity Details Accepted'])
+            ->get();
+
+        $eai = DB::table('eais')->where('year', $year)
+            ->where('department', $department)
+            ->where('plant', $plant)
+            ->whereIn('status', ['Pre-Activity Details Accepted', 'Post-Activity Details Accepted'])
+            ->get();
+        $countData = $this->getCount($hira, $eai);
+        $countGraphData = $this->getGraphData($hira, $eai);
+        $responseData = array_merge($countData, $countGraphData);
+        return response()->json($responseData, 200);
     }
-    public function getCount($year, $department, $plant) {
-        $hiraCount = Hira::where('year', $year)
-            ->where('department', $department)
-            ->where('plant', $plant)
-            ->count();
-        $eaiCount = Eai::where('year', $year)
-            ->where('department', $department)
-            ->where('plant', $plant)
-            ->count();
-//        $arrCount = Hiras::where('year', $year)
+
+    public function getCount($hira, $eai)
+    {
+        $hiraCount = $hira->count();
+        $eaiCount = $eai->count();
+//        $arrCount = Arr::where('year', $year)
 //            ->where('department', $department)
 //            ->where('plant', $plant)
 //            ->count();
+        $eaiHighCount = Eai::where('residual_ranking_value', '>=', 6)
+            ->where('residual_ranking_value', '<=', 9)
+            ->count();
+
+        $hiraHighCount = Hira::where('residual_ranking_value', '>=', 6)
+            ->where('residual_ranking_value', '<=', 9)
+            ->count();
+
+        $totalCount = $eaiHighCount + $hiraHighCount;
         return [
             'hiraCount' => $hiraCount,
-            'eaiCount' => $eaiCount
+            'eaiCount' => $eaiCount,
+            'totalHighResidualCount' => $totalCount
         ];
     }
-//    public function getGraphData() {
-//        return response()->json();
-//    }
+
+    public function getGraphData($hiras, $eais)
+    {
+
+        $label = $hiras->pluck('id')->toArray();
+        $grossRisks = array_map('intval', $hiras->pluck('gross_ranking_value')->toArray());
+        $residualRisks = array_map('intval', $hiras->pluck('residual_ranking_value')->toArray());
+        $hiraGraphData = (object)([
+            'labels' => $label,
+            'gross_risks' => $grossRisks,
+            'residual_risks' => $residualRisks
+        ]);
+
+        return [
+            'hira_graph_data' => $hiraGraphData,
+        ];
+    }
 
 }
