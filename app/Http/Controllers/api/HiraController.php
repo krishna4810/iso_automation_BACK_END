@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Schema;
 class HiraController extends Controller
 {
 
-
     public function getDocumentNumber(Request $request)
     {
         $department = $request->input('department');
@@ -168,7 +167,6 @@ class HiraController extends Controller
             $newForm->save();
             return response()->json(['message' => 'Field added successfully.'], 200);
         }
-
         return response()->json(['message' => 'The ' . $columnName . ' already exists in the table.'], 400);
     }
 
@@ -178,7 +176,6 @@ class HiraController extends Controller
         $form_id = $request->input('id');
         $tableName = 'hiras';
 
-        // Check if the column exists in the table
         if (Schema::hasColumn($tableName, $columnName)) {
             Schema::table($tableName, function (Blueprint $table) use ($columnName) {
                 $table->dropColumn($columnName);
@@ -188,6 +185,4 @@ class HiraController extends Controller
         }
         return response()->json(['message' => 'The ' . $columnName . ' does not exist in the table.'], 400);
     }
-
-
 }

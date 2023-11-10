@@ -46,17 +46,16 @@ class DashboardController extends Controller
         $hira = DB::table('hiras')->where('year', $year)
             ->where('department', $department)
             ->where('plant', $plant)
-            ->whereIn('status', ['Pre-Activity Details Accepted', 'Post-Activity Details Accepted'])
             ->get();
 
         $eai = DB::table('eais')->where('year', $year)
             ->where('department', $department)
             ->where('plant', $plant)
-            ->whereIn('status', ['Pre-Activity Details Accepted', 'Post-Activity Details Accepted'])
             ->get();
         $countData = $this->getCount($hira, $eai);
-        $countGraphData = $this->getGraphData($hira, $eai);
-        $responseData = array_merge($countData, $countGraphData);
+        $graphData = $this->getGraphData($hira, $eai);
+        $funtionData = $this->getData($hira, $eai);
+        $responseData = array_merge($countData, $graphData, $funtionData);
         return response()->json($responseData, 200);
     }
 
@@ -68,11 +67,11 @@ class DashboardController extends Controller
 //            ->where('department', $department)
 //            ->where('plant', $plant)
 //            ->count();
-        $eaiHighCount = Eai::where('residual_ranking_value', '>=', 6)
+        $eaiHighCount = $eai->where('residual_ranking_value', '>=', 6)
             ->where('residual_ranking_value', '<=', 9)
             ->count();
 
-        $hiraHighCount = Hira::where('residual_ranking_value', '>=', 6)
+        $hiraHighCount = $hira->where('residual_ranking_value', '>=', 6)
             ->where('residual_ranking_value', '<=', 9)
             ->count();
 
@@ -90,14 +89,39 @@ class DashboardController extends Controller
         $label = $hiras->pluck('id')->toArray();
         $grossRisks = array_map('intval', $hiras->pluck('gross_ranking_value')->toArray());
         $residualRisks = array_map('intval', $hiras->pluck('residual_ranking_value')->toArray());
+
+        $eai_label = $eais->pluck('id')->toArray();
+        $eai_grossRisks = array_map('intval', $eais->pluck('gross_ranking_value')->toArray());
+        $eai_residualRisks = array_map('intval', $eais->pluck('residual_ranking_value')->toArray());
+
+
         $hiraGraphData = (object)([
             'labels' => $label,
             'gross_risks' => $grossRisks,
             'residual_risks' => $residualRisks
         ]);
 
+        $eaiGraphData = (object)([
+            'labels' => $eai_label,
+            'gross_risks' => $eai_grossRisks,
+            'residual_risks' => $eai_residualRisks
+        ]);
+
         return [
             'hira_graph_data' => $hiraGraphData,
+            'eai_graph_data' => $eaiGraphData
+        ];
+    }
+
+    public function getData($hiras, $eai)
+    {
+
+      $functionalData = (object)([
+            'hira' => $hiras,
+             'eai' => $eai
+        ]);
+        return [
+            'functional_data' => $functionalData,
         ];
     }
 
