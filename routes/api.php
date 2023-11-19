@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\api\ArrController;
+use App\Http\Controllers\api\ArrRiskController;
 use App\Http\Controllers\api\CommentController;
 use App\Http\Controllers\api\DashboardController;
 use App\Http\Controllers\api\EaiController;
@@ -51,6 +53,13 @@ Route::delete('deleteField', [HiraController::class, 'deleteField']);
 Route::get('getEAIDocumentNumber', [EaiController::class, 'getDocumentNumber']);
 Route::post('addEai', [EaiController::class, 'addEai']);
 Route::get('getEai', [EaiController::class, 'getEai']);
+
+// ARR API calls
+Route::get('getARRDocumentNumber', [ArrController::class, 'getDocumentNumber']);
+Route::post('addAssetDetails', [ArrController::class, 'addAssetDetails']);
+Route::post('addRiskDetails', [ArrController::class, 'addRiskDetails']);
+Route::get('getArrRisks', [ArrController::class, 'getArrRisks']);
+Route::get('getSpecificFunction', [ArrController::class, 'getSpecificFunction']);
 
 // Dashboard API CALLS
 Route::get('getFilterParam', [DashboardController::class, 'getFilterParam']);

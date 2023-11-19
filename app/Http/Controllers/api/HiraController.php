@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ArrRisk;
 use App\Models\Eai;
 use App\Models\Hira;
 use App\Models\HiraForm;
@@ -22,7 +23,7 @@ class HiraController extends Controller
         $year = $request->input('year');
         $values = DB::table('hiras')
             ->where('department', $department)
-            ->where('   unit', $unit)
+            ->where('unit', $unit)
             ->where('year', $year)
             ->where('plant', $plant)
             ->get();
@@ -132,11 +133,13 @@ class HiraController extends Controller
     {
         $id = $request->input('id');
         $status = $request->input('status');
-        $model = null;
+
         if (strpos($id, 'E') === 0) {
             $model = EAI::find($id);
         } elseif (strpos($id, 'H') === 0) {
             $model = Hira::find($id);
+        } else {
+            $model = ArrRisk::find($id);
         }
         if (!$model) {
             return response()->json(['message' => 'Record not found'], 404);
