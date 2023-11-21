@@ -64,7 +64,7 @@ Route::get('getSpecificFunction', [ArrController::class, 'getSpecificFunction'])
 // Dashboard API CALLS
 Route::get('getFilterParam', [DashboardController::class, 'getFilterParam']);
 Route::get('filterDashboard', [DashboardController::class, 'filterDashboard']);
-
+Route::post('generateReport', [DashboardController::class, 'generateReport']);
 
 
 

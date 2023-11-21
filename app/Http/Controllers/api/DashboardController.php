@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Exports\ArrExport;
+use App\Exports\HiraExport;
 use App\Http\Controllers\Controller;
 use App\Models\Arr;
 use App\Models\Eai;
@@ -11,6 +13,87 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+
+    public function generateReport(Request $request)
+    {
+
+        $plant = $request->input('plant');
+        $year = $request->input('year');
+        $department = $request->input('department');
+        $type = $request->input('type');
+
+        $query = ($type == 'hira' ? DB::table('hiras') : DB::table('eais'));
+
+        if ($type == 'arr') {
+            $query = DB::table('arrs')
+                ->rightJoin('arr_risks', 'arrs.id', '=', 'asset_id');
+        }
+        if ($year !== "null") {
+            $query->where('year', $year);
+        }
+        if ($department !== "null") {
+            $query->where('department', $department);
+        }
+        if ($plant !== "null") {
+            $query->where('plant', $plant);
+        }
+        if ($type == 'arr') {
+            $filteredData = $query
+                ->select('id',
+                    'doc_number',
+                    'creator_name',
+                    'date',
+                    'plant',
+                    'department',
+                    'unit',
+                    'asset_name',
+                    'asset_number',
+                    'installation_date',
+                    'make',
+                    'risk_statement',
+                    'gross_likelihood',
+                    'gross_impact',
+                    'gross_ranking',
+                    'existing_control',
+                    'further_action_required',
+                    'residual_likelihood',
+                    'residual_impact',
+                    'residual_ranking'
+                )
+                ->get();
+            return (new ArrExport($filteredData))->download($type . '_report.xlsx');
+        } else {
+            $filteredData = $query
+                ->select('id',
+                    'doc_number',
+                    'creator_name',
+                    'date',
+                    'plant',
+                    'department',
+                    'unit',
+                    'activity_name',
+                    'sub_activity_name',
+                    'hazard',
+                    'start_date',
+                    'gross_likelihood',
+                    'gross_impact',
+                    'gross_ranking',
+                    'existing_control',
+                    'completion_date',
+                    'mitigation_measures',
+                    'further_action_required',
+                    'routine_activity',
+                    'workers_involved',
+                    'residual_likelihood',
+                    'residual_impact',
+                    'residual_ranking')
+                ->get();
+
+            return (new HiraExport($filteredData))->download($type . '_report.xlsx');
+        }
+
+    }
+
     public function getFilterParam()
     {
         $uniqueDepartments = collect([
@@ -69,7 +152,7 @@ class DashboardController extends Controller
 
         $countData = $this->getCount($hira, $eai, $arr);
         $graphData = $this->getGraphData($hira, $eai, $arr);
-        $functionData = $this->getData($hira, $eai, $year, $plant, $department);
+        $functionData = $this->getData($hira, $eai, $arr, $year, $plant, $department);
         $responseData = array_merge($countData, $graphData, $functionData);
 
         return response()->json($responseData, 200);
@@ -110,7 +193,7 @@ class DashboardController extends Controller
     public function getGraphData($hiras, $eais, $arr)
     {
 
-        $arrIds = $arr->pluck('id');
+
         $label = $hiras->pluck('id')->toArray();
         $grossRisks = array_map('intval', $hiras->pluck('gross_ranking_value')->toArray());
         $residualRisks = array_map('intval', $hiras->pluck('residual_ranking_value')->toArray());
@@ -119,17 +202,22 @@ class DashboardController extends Controller
         $eai_grossRisks = array_map('intval', $eais->pluck('gross_ranking_value')->toArray());
         $eai_residualRisks = array_map('intval', $eais->pluck('residual_ranking_value')->toArray());
 
-
+        $arrIds = $arr->pluck('id');
         $arr_grossRisks = DB::table('arr_risks')
             ->whereIn('asset_id', $arrIds)
+            ->select('asset_id', DB::raw('AVG(gross_ranking_value) as avg_gross_ranking_value'))
             ->groupBy('asset_id')
-            ->pluck(DB::raw('MAX(gross_ranking_value)'))
+            ->orderBy('asset_id') // Add this line to ensure the order of results
+            ->pluck('avg_gross_ranking_value', 'asset_id')
             ->toArray();
+
 
         $arr_residualRisks = DB::table('arr_risks')
             ->whereIn('asset_id', $arrIds)
+            ->select('asset_id', DB::raw('AVG(residual_ranking_value) as avg_residual_ranking_value'))
             ->groupBy('asset_id')
-            ->pluck(DB::raw('MAX(residual_ranking_value)'))
+            ->orderBy('asset_id') // Add this line to ensure the order of results
+            ->pluck('avg_residual_ranking_value', 'asset_id')
             ->toArray();
 
         $arr_label = $arr->pluck('id')->toArray();
@@ -160,19 +248,11 @@ class DashboardController extends Controller
         ];
     }
 
-    public function getData($hiras, $eai, $year, $plant, $department)
+    public function getData($hiras, $eai, $arr, $year, $plant, $department)
     {
         $arrRisks = DB::table('arrs')
-            ->join('arr_risks', 'arrs.id', '=', 'arr_risks.asset_id')
-            ->select('arr_risks.*')
-            ->where(function ($query) {
-                $query->orWhere(function ($subQuery) {
-                    $subQuery->where('arr_risks.gross_ranking_value', '=', DB::table('arr_risks')->max('gross_ranking_value'));
-                })->orWhere(function ($subQuery) {
-                    $subQuery->where('arr_risks.residual_ranking_value', '=', DB::table('arr_risks')->max('residual_ranking_value'));
-                });
-            });;
-
+            ->join('arr_risks', 'arrs.id', '=', 'asset_id')
+            ->select('*');
         if ($year !== "null") {
             $arrRisks->where('year', $year);
         }
@@ -183,14 +263,24 @@ class DashboardController extends Controller
             $arrRisks->where('plant', $plant);
         }
 
+        $arrIds = $arr->pluck('id');
+
+        $arr_residualRisks = DB::table('arr_risks')
+            ->whereIn('asset_id', $arrIds)
+            ->select('asset_id', DB::raw('MAX(residual_ranking_value) as avg_residual_ranking_value'))
+            ->groupBy('asset_id')
+            ->orderBy('asset_id') // Add this line to ensure the order of results
+            ->pluck('avg_residual_ranking_value', 'asset_id')
+            ->toArray();
+
         $functionalData = (object)([
             'hira' => $hiras,
             'eai' => $eai,
-            'arr' => $arrRisks->get()
+            'arr' => $arrRisks->get(),
+            'arrHeatMap' => $arr_residualRisks
         ]);
         return [
             'functional_data' => $functionalData,
         ];
     }
-
 }
