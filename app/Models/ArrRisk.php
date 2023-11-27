@@ -24,9 +24,4 @@ class ArrRisk extends Model
         'residual_ranking',
         'status',
     ];
-
-    public function arr()
-    {
-        return $this->belongsTo(Arr::class, 'asset_id', 'id');
     }
-}

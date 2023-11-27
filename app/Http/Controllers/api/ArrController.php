@@ -5,8 +5,6 @@ namespace App\Http\Controllers\api;
 use App\Http\Controllers\Controller;
 use App\Models\Arr;
 use App\Models\ArrRisk;
-use App\Models\Eai;
-use App\Models\Hira;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

@@ -25,7 +25,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// User API CALSS
+// User API CALLS
 Route::post('addUser', [UserController::class, 'addUser']);
 
 Route::get('getRoles', [UserController::class, 'getRoles']);

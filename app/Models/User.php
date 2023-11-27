@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'user_name',
         'role_id',
+        'created_by'
     ];
     protected $casts = [
         'email_verified_at' => 'datetime',

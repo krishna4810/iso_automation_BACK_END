@@ -17,7 +17,7 @@ class UserController extends Controller
         if ($user) {
             return response()->json(['message' => 'User already exists'], 200);
         } else {
-            User::create(['user_name' => $username, 'role_id' => 1]);
+            User::create(['user_name' => $username, 'role_id' => 1, 'created_by' => 0]);
             return response()->json(['message' => 'User added successfully'], 200);
         }
     }
@@ -49,26 +49,20 @@ class UserController extends Controller
 
     public function createOrUpdateUser(Request $request)
     {
-        $validatedData = $request->validate([
-            'user_name' => 'required|string',
-            'role_id' => 'required|integer',
-        ]);
+        $userName = $request->input('user_name');
+        $roleId = $request->input('role_id');
+        $created_by = $request->input('created_by');
 
-        $userName = $validatedData['user_name'];
-        $roleId = $validatedData['role_id'];
-
-        // Check if the user already exists
         $user = User::where('user_name', $userName)->first();
 
         if ($user) {
-            // User exists, update the role_id
             $user->role_id = $roleId;
             $user->save();
         } else {
-            // User doesn't exist, create a new user
             $user = new User();
             $user->user_name = $userName;
             $user->role_id = $roleId;
+            $user->created_by = $created_by;
             $user->save();
         }
 

@@ -6,6 +6,7 @@ use App\Exports\ArrExport;
 use App\Exports\HiraExport;
 use App\Http\Controllers\Controller;
 use App\Models\Arr;
+use App\Models\ArrRisk;
 use App\Models\Eai;
 use App\Models\Hira;
 use Illuminate\Http\Request;
@@ -207,7 +208,7 @@ class DashboardController extends Controller
             ->whereIn('asset_id', $arrIds)
             ->select('asset_id', DB::raw('AVG(gross_ranking_value) as avg_gross_ranking_value'))
             ->groupBy('asset_id')
-            ->orderBy('asset_id') // Add this line to ensure the order of results
+            ->orderBy('asset_id')
             ->pluck('avg_gross_ranking_value', 'asset_id')
             ->toArray();
 
@@ -216,7 +217,7 @@ class DashboardController extends Controller
             ->whereIn('asset_id', $arrIds)
             ->select('asset_id', DB::raw('AVG(residual_ranking_value) as avg_residual_ranking_value'))
             ->groupBy('asset_id')
-            ->orderBy('asset_id') // Add this line to ensure the order of results
+            ->orderBy('asset_id')
             ->pluck('avg_residual_ranking_value', 'asset_id')
             ->toArray();
 
@@ -263,24 +264,43 @@ class DashboardController extends Controller
             $arrRisks->where('plant', $plant);
         }
 
-        $arrIds = $arr->pluck('id');
+//        $arr_residualRisks = Arr::table('arr_risks')
+//            ->select('asset_id', DB::raw('MAX(residual_ranking_value) as max_residual_ranking_value'))
+//            ->groupBy('asset_id');
 
-        $arr_residualRisks = DB::table('arr_risks')
-            ->whereIn('asset_id', $arrIds)
-            ->select('asset_id', DB::raw('MAX(residual_ranking_value) as avg_residual_ranking_value'))
-            ->groupBy('asset_id')
-            ->orderBy('asset_id') // Add this line to ensure the order of results
-            ->pluck('avg_residual_ranking_value', 'asset_id')
-            ->toArray();
+        $result = $this->getRandomRows();
 
         $functionalData = (object)([
             'hira' => $hiras,
             'eai' => $eai,
             'arr' => $arrRisks->get(),
-            'arrHeatMap' => $arr_residualRisks
+            'arrHeatMap' => $result
         ]);
         return [
             'functional_data' => $functionalData,
         ];
+    }
+
+    public function getRandomRows()
+    {
+        // Get distinct asset_ids from the table
+        $distinctAssetIds = ArrRisk::distinct('asset_id')->pluck('asset_id');
+
+        // Initialize an array to store randomly selected rows
+        $randomRows = [];
+
+        // Loop through each distinct asset_id and select a random row
+        foreach ($distinctAssetIds as $assetId) {
+            $randomRow = ArrRisk::where('asset_id', $assetId)
+                ->inRandomOrder()
+                ->first();
+
+            // Add the selected row to the array
+            if ($randomRow) {
+                $randomRows[] = $randomRow;
+            }
+        }
+
+        return $randomRows;
     }
 }

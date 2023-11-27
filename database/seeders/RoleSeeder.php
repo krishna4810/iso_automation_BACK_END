@@ -80,7 +80,7 @@ class RoleSeeder extends Seeder
             'create_function' => false,
             'view_function' => true,
             'edit_function' => false,
-            'create_creators' => false,
+            'create_creators' => true,
             'can_approve' => true,
             'view_report' => false,
             'dashboard' => true
