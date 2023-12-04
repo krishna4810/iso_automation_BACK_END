@@ -37,6 +37,8 @@ Route::put('updateRoles', [UserController::class, 'updateRoles']);
 Route::post('createOrUpdateUser', [UserController::class, 'createOrUpdateUser']);
 
 Route::get('checkRoles/{user_name}', [UserController::class, 'checkRoles']);
+Route::get('checkRoles/{user_name}', [UserController::class, 'checkRoles']);
+Route::get('getCreators/{creator_id}', [UserController::class, 'getCreators']);
 
 // HIRA API CALLS
 Route::get('getDocumentNumber', [HiraController::class, 'getDocumentNumber']);

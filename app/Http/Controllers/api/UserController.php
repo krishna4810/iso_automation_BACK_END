@@ -41,7 +41,23 @@ class UserController extends Controller
             ->get();
 
         if (!$users) {
-            return response()->json(['message' => 'Failed to load Users'], 400);
+            return response()->json($users);
+        } else {
+            return response()->json($users);
+        }
+    }
+
+    public function getCreators($creator_id)
+    {
+        $users = DB::table('users')
+            ->join('roles', 'users.role_id', '=', 'roles.id')
+            ->select('users.user_name', 'users.role_id', 'roles.role_name')
+            ->where('users.created_by','=',$creator_id)
+            ->orderBy('users.id', 'DESC')
+            ->get();
+
+        if (!$users) {
+            return response()->json($users);
         } else {
             return response()->json($users);
         }
@@ -58,15 +74,16 @@ class UserController extends Controller
         if ($user) {
             $user->role_id = $roleId;
             $user->save();
+            return response()->json(['message' => 'User Updated successfully']);
+
         } else {
             $user = new User();
             $user->user_name = $userName;
             $user->role_id = $roleId;
             $user->created_by = $created_by;
             $user->save();
+            return response()->json(['message' => 'User created successfully']);
         }
-
-        return response()->json(['message' => 'User created/updated successfully']);
     }
 
 

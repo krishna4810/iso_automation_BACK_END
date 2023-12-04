@@ -79,14 +79,16 @@ class ArrController extends Controller
             ->when($role_id == 3, function ($query) use ($user_id) {
                 return $query->where('user_id', $user_id);
             })
-            ->when($role_id == 4, function ($query) use ($plant, $department, $status) {
+            ->when($role_id == 4 || $role_id == 5, function ($query) use ($plant, $department, $status) {
                 return $query->where(function ($query) use ($plant, $department, $status) {
-                    return $query->where('plant', $plant)
-                        ->where('department', $department)
-                        ->where('status', $status);
-                })->orWhere(function ($query) use ($plant, $status) {
-                    return $query->where('plant', $plant)
-                        ->where('status', $status);
+                    if ($plant == 'Corporate Office') {
+                        $query->where('department', $department)
+                            ->where('status', $status)
+                            ->where('plant', $plant);
+
+                    } else {
+                        $query->where('plant', $plant)->where('status', $status);
+                    }
                 });
             })
             ->when($role_id == 5, function ($query) use ($status, $plant, $department, $unit) {
@@ -164,14 +166,14 @@ class ArrController extends Controller
         $id = $request->input('id');
 
         if (strpos($id, 'E') === 0) {
-            $model = DB::table('eais')->where('eais.id','=',$id)->get();
+            $model = DB::table('eais')->where('eais.id', '=', $id)->get();
         } elseif (strpos($id, 'H') === 0) {
-            $model = DB::table('hiras')->where('hiras.id','=',$id)->get();
+            $model = DB::table('hiras')->where('hiras.id', '=', $id)->get();
         } else {
             $model = DB::table('arr_risks')
                 ->rightjoin('arrs', 'arrs.id', '=', 'arr_risks.asset_id')
                 ->orderBy('arrs.id', 'desc')
-                ->where('arrs.id','=',$id)
+                ->where('arrs.id', '=', $id)
                 ->get()
                 ->groupBy('id')
                 ->map(function ($item) {

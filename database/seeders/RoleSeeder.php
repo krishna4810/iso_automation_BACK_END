@@ -94,7 +94,7 @@ class RoleSeeder extends Seeder
             'master_data' => false,
             'make_forms' => false,
             'change_workflow' => false,
-            'can_comment' => false,
+            'can_comment' => true,
             'generate_report' => false,
             'create_function' => false,
             'view_function' => true,
@@ -106,24 +106,24 @@ class RoleSeeder extends Seeder
 
         ]);
 
-        Role::create([
-            'id' => 6,
-            'role_name' => 'Acceptance',
-            'add_user' => false,
-            'master_data' => false,
-            'make_forms' => false,
-            'change_workflow' => false,
-            'can_comment' => true,
-            'generate_report' => false,
-            'create_function' => false,
-            'view_function' => true,
-            'create_creators' => false,
-            'edit_function' => true,
-            'can_approve' => true,
-            'view_report' => false,
-            'dashboard' => true
-
-        ]);
+//        Role::create([
+//            'id' => 6,
+//            'role_name' => 'Acceptance',
+//            'add_user' => false,
+//            'master_data' => false,
+//            'make_forms' => false,
+//            'change_workflow' => false,
+//            'can_comment' => true,
+//            'generate_report' => false,
+//            'create_function' => false,
+//            'view_function' => true,
+//            'create_creators' => false,
+//            'edit_function' => true,
+//            'can_approve' => true,
+//            'view_report' => false,
+//            'dashboard' => true
+//
+//        ]);
 
         Role::create([
             'id' => 7,
@@ -132,7 +132,7 @@ class RoleSeeder extends Seeder
             'master_data' => false,
             'make_forms' => false,
             'change_workflow' => false,
-            'can_comment' => false,
+            'can_comment' => true,
             'generate_report' => false,
             'create_function' => false,
             'view_function' => true,

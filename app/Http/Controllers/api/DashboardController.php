@@ -204,6 +204,7 @@ class DashboardController extends Controller
         $eai_residualRisks = array_map('intval', $eais->pluck('residual_ranking_value')->toArray());
 
         $arrIds = $arr->pluck('id');
+
         $arr_grossRisks = DB::table('arr_risks')
             ->whereIn('asset_id', $arrIds)
             ->select('asset_id', DB::raw('AVG(gross_ranking_value) as avg_gross_ranking_value'))
@@ -252,8 +253,9 @@ class DashboardController extends Controller
     public function getData($hiras, $eai, $arr, $year, $plant, $department)
     {
         $arrRisks = DB::table('arrs')
-            ->join('arr_risks', 'arrs.id', '=', 'asset_id')
+            ->join('arr_risks', 'arrs.id', '=', 'arr_risks.asset_id')
             ->select('*');
+
         if ($year !== "null") {
             $arrRisks->where('year', $year);
         }
@@ -264,11 +266,8 @@ class DashboardController extends Controller
             $arrRisks->where('plant', $plant);
         }
 
-//        $arr_residualRisks = Arr::table('arr_risks')
-//            ->select('asset_id', DB::raw('MAX(residual_ranking_value) as max_residual_ranking_value'))
-//            ->groupBy('asset_id');
 
-        $result = $this->getRandomRows();
+        $result = $this->getRandomRows($arrRisks);
 
         $functionalData = (object)([
             'hira' => $hiras,
@@ -281,21 +280,15 @@ class DashboardController extends Controller
         ];
     }
 
-    public function getRandomRows()
+    public function getRandomRows($arrRisks)
     {
-        // Get distinct asset_ids from the table
-        $distinctAssetIds = ArrRisk::distinct('asset_id')->pluck('asset_id');
-
-        // Initialize an array to store randomly selected rows
+        $distinctAssetIds = $arrRisks->distinct('asset_id')->pluck('asset_id');
         $randomRows = [];
 
-        // Loop through each distinct asset_id and select a random row
         foreach ($distinctAssetIds as $assetId) {
-            $randomRow = ArrRisk::where('asset_id', $assetId)
+            $randomRow = $arrRisks->where('asset_id', $assetId)
                 ->inRandomOrder()
                 ->first();
-
-            // Add the selected row to the array
             if ($randomRow) {
                 $randomRows[] = $randomRow;
             }

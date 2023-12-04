@@ -89,7 +89,7 @@ class EaiController extends Controller
         $query = DB::table('eais')->orderBy('id', 'DESC');
         if ($role_id == 3) {
             $query->where('user_id', $user_id);
-        } elseif ($role_id == 4) {
+        } elseif ($role_id == 4 || $role_id == 5) {
             if ($plant == 'Corporate Office') {
                 $query->where('plant', $plant)
                     ->where('department', $department)
@@ -98,11 +98,6 @@ class EaiController extends Controller
                 $query->where('plant', $plant)
                     ->where('status', $status);
             }
-        } elseif ($role_id == 5) {
-            $query->where('status', $status)
-                ->where('plant', $plant)
-                ->where('department', $department)
-                ->where('unit', $unit);
         } elseif ($role_id == 6) {
             $query->where('status', $status)
                 ->where('plant', $plant)
