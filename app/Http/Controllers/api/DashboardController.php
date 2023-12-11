@@ -253,8 +253,7 @@ class DashboardController extends Controller
     public function getData($hiras, $eai, $arr, $year, $plant, $department)
     {
         $arrRisks = DB::table('arrs')
-            ->join('arr_risks', 'arrs.id', '=', 'arr_risks.asset_id')
-            ->select('*');
+            ->rightJoin('arr_risks', 'arrs.id', '=', 'asset_id');
 
         if ($year !== "null") {
             $arrRisks->where('year', $year);
@@ -266,34 +265,39 @@ class DashboardController extends Controller
             $arrRisks->where('plant', $plant);
         }
 
-
-        $result = $this->getRandomRows($arrRisks);
+        $filteredData = $arrRisks
+            ->select('id',
+                'asset_id',
+                'doc_number',
+                'creator_name',
+                'date',
+                'plant',
+                'department',
+                'unit',
+                'asset_name',
+                'asset_number',
+                'installation_date',
+                'make',
+                'risk_statement',
+                'gross_likelihood',
+                'gross_impact',
+                'gross_ranking',
+                'existing_control',
+                'further_action_required',
+                'residual_likelihood',
+                'residual_impact',
+                'residual_ranking'
+            );
+        $result = $filteredData->distinct('id', 'doc_number')->get();
 
         $functionalData = (object)([
             'hira' => $hiras,
             'eai' => $eai,
-            'arr' => $arrRisks->get(),
+            'arr' => $filteredData->get(),
             'arrHeatMap' => $result
         ]);
         return [
             'functional_data' => $functionalData,
         ];
-    }
-
-    public function getRandomRows($arrRisks)
-    {
-        $distinctAssetIds = $arrRisks->distinct('asset_id')->pluck('asset_id');
-        $randomRows = [];
-
-        foreach ($distinctAssetIds as $assetId) {
-            $randomRow = $arrRisks->where('asset_id', $assetId)
-                ->inRandomOrder()
-                ->first();
-            if ($randomRow) {
-                $randomRows[] = $randomRow;
-            }
-        }
-
-        return $randomRows;
     }
 }
