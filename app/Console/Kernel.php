@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('send:yearly-emails')->yearlyOn(1, 1)->timezone('Asia/Dhaka');
         $schedule->command('send:yearly-emails')->quarterlyOn(1)->timezone('Asia/Dhaka');
         $schedule->command('send:yearly-emails')->yearlyOn(12, 31)->timezone('Asia/Dhaka');
-    }
+//        $schedule->command('activities:auto-approve')->dailyAt('00:00'); // Runs every midnight
+        $schedule->call('App\Http\Controllers\ActivityController@autoApprove')->everyMinute();    }
 
     /**
      * Register the commands for the application.

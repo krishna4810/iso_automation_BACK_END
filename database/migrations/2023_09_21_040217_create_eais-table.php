@@ -23,8 +23,8 @@ return new class extends Migration {
             $table->string('date');
             $table->string('year');
             $table->string('activity_name');
-            $table->string('sub_activity_name')->nullable();
-            $table->string('hazard');
+            $table->string('aspect')->nullable();
+            $table->string('impact');
             $table->string('start_date');
             $table->string('gross_likelihood');
             $table->string('gross_impact');

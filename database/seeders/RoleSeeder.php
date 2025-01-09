@@ -26,6 +26,7 @@ class RoleSeeder extends Seeder
             'edit_function' => false,
             'create_creators' => false,
             'can_approve' => false,
+            'can_delete' => false,
             'view_report' => false,
             'dashboard' => true
         ]);
@@ -44,6 +45,7 @@ class RoleSeeder extends Seeder
             'edit_function' => false,
             'create_creators' => false,
             'can_approve' => false,
+            'can_delete' => false,
             'view_report' => false,
             'dashboard' => true
 
@@ -63,6 +65,7 @@ class RoleSeeder extends Seeder
             'edit_function' => true,
             'create_creators' => false,
             'can_approve' => false,
+            'can_delete' => true,
             'view_report' => false,
             'dashboard' => true
 
@@ -82,6 +85,7 @@ class RoleSeeder extends Seeder
             'edit_function' => false,
             'create_creators' => true,
             'can_approve' => true,
+            'can_delete' => false,
             'view_report' => false,
             'dashboard' => true
 
@@ -101,6 +105,7 @@ class RoleSeeder extends Seeder
             'edit_function' => false,
             'create_creators' => false,
             'can_approve' => true,
+            'can_delete' => false,
             'view_report' => false,
             'dashboard' => true
 
@@ -126,7 +131,7 @@ class RoleSeeder extends Seeder
 //        ]);
 
         Role::create([
-            'id' => 7,
+            'id' => 6,
             'role_name' => 'Approval',
             'add_user' => false,
             'master_data' => false,
@@ -139,25 +144,27 @@ class RoleSeeder extends Seeder
             'create_creators' => false,
             'edit_function' => false,
             'can_approve' => true,
+            'can_delete' => false,
             'view_report' => false,
             'dashboard' => true
 
         ]);
 
         Role::create([
-            'id' => 8,
-            'role_name' => 'Final Approved',
+            'id' => 7,
+            'role_name' => 'Final Approval',
             'add_user' => false,
             'master_data' => false,
             'make_forms' => false,
             'change_workflow' => false,
-            'can_comment' => false,
+            'can_comment' => true,
             'generate_report' => false,
             'create_function' => false,
-            'view_function' => false,
+            'view_function' => true,
             'create_creators' => false,
             'edit_function' => false,
-            'can_approve' => false,
+            'can_approve' => true,
+            'can_delete' => false,
             'view_report' => true,
             'dashboard' => true
 

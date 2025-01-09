@@ -25,6 +25,7 @@ return new class extends Migration
             $table->boolean('edit_function');
             $table->boolean('create_creators');
             $table->boolean('can_approve');
+            $table->boolean('can_delete');
             $table->boolean('view_report');
             $table->boolean('dashboard');
             $table->timestamps();

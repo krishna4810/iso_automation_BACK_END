@@ -4,6 +4,9 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use Carbon\Carbon;
+use App\Models\Activity;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -127,6 +130,60 @@ class UserController extends Controller
                 'message' => 'User not found.',
             ], 404);
         }
+    }
+
+        public function autoApprove()
+    {
+        // Current date
+        $currentDate = Carbon::now();
+
+        // Fetch all activities that need auto-approval
+        $activities = Activity::where('status', 'LIKE', 'Awaiting%Approval')->get();
+
+        foreach ($activities as $activity) {
+            $createdAt = Carbon::parse($activity->created_at);
+
+            // Calculate days difference excluding weekends
+            $workingDaysPassed = $this->calculateWorkingDays($createdAt, $currentDate);
+
+            // Determine status based on working days passed
+            if ($workingDaysPassed >= 4 && $activity->status === "Awaiting IMS Focal's Approval") {
+                $this->updateStatus($activity, "Awaiting Head's Approval", "on behalf of IMS Focal Person");
+            } elseif ($workingDaysPassed >= 8 && $activity->status === "Awaiting Head's Approval") {
+                $this->updateStatus($activity, "Awaiting Accepting Officer's Approval", "on behalf of Unit/Section/Division Head");
+            } elseif ($workingDaysPassed >= 12 && $activity->status === "Awaiting Accepting Officer's Approval") {
+                $this->updateStatus($activity, "Awaiting CAU Head's Approval", "on behalf of Director/GM");
+            } elseif ($workingDaysPassed >= 16 && $activity->status === "Awaiting CAU Head's Approval") {
+                $this->updateStatus($activity, "Approved by CAU Head", "on behalf of CAU Head");
+            }
+        }
+    }
+
+    private function calculateWorkingDays($start, $end)
+    {
+        $workingDays = 0;
+
+        // Loop through days between start and end
+        while ($start->lte($end)) {
+            if (!$start->isWeekend()) {
+                $workingDays++;
+            }
+            $start->addDay();
+        }
+
+        return $workingDays;
+    }
+
+    private function updateStatus($activity, $newStatus, $logMessage)
+    {
+        $activity->status = $newStatus;
+        $activity->save();
+
+        // Log the status update
+        ActivityLog::create([
+            'activity_id' => $activity->id,
+            'activity' => "Auto-approved {$logMessage} on " . now()->timezone('GMT+6')->format('D, M d, Y g:i A'),
+        ]);
     }
 
 }

@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Activity;
+use App\Models\SubActivity;
+use App\Models\Hazard;
+use App\Models\ActivityLog;
 use App\Models\ArrRisk;
 use App\Models\Eai;
 use App\Models\Hira;
@@ -41,79 +45,268 @@ class HiraController extends Controller
 
     public function addHira(Request $request)
     {
-        $hira = Hira::where('doc_number', $request->docNumber)->first();
-        $data = [
-            'department' => $request->input('department'),
-            'doc_number' => $request->input('docNumber'),
-            'user_id' => $request->input('userID'),
-            'creator_name' => $request->input('creatorName'),
-            'date' => $request->input('date'),
-            'year' => $request->input('year'),
-            'plant' => $request->input('plant'),
-            'unit' => $request->input('unit'),
-            'address' => $request->input('address'),
-            'activity_name' => $request->input('activityName'),
-            'sub_activity_name' => $request->input('subActivityName'),
-            'hazard' => $request->input('hazard'),
-            'start_date' => $request->input('start_date'),
-            'gross_likelihood' => $request->input('g_likelihood'),
-            'gross_impact' => $request->input('g_impact'),
-            'gross_ranking' => $request->input('g_ranking'),
-            'gross_ranking_value' => $request->input('grossRankingValue'),
-            'existing_control' => $request->input('existingControl'),
-            'completion_date' => $request->input('completion_date'),
-            'mitigation_measures' => $request->input('mitigationMeasures'),
-            'further_action_required' => $request->input('furtherAction'),
-            'routine_activity' => $request->input('routineActivity'),
-            'workers_involved' => $request->input('workersInvolved'),
-            'residual_likelihood' => $request->input('r_likelihood'),
-            'residual_impact' => $request->input('r_impact'),
-            'residual_ranking_value' => $request->input('residualRankingValue'),
-            'residual_ranking' => $request->input('r_ranking'),
-            'status' => $request->input('status'),
-        ];
-        Hira::updateOrCreate(
-            ['doc_number' => $request->input('docNumber')],
-            $data
-        );
+        $data = $request->all();
 
-        if ($hira) {
-            return response()->json(['message' => "Hira Function Updated Successfully"]);
-        } else {
-            return response()->json(['message' => "Hira Function added Successfully"]);
+        // Create Activity
+        $activity = Activity::create($data['activity']);
+
+        // Log the creation
+        ActivityLog::create([
+            'activity_id' => $activity->id,
+            'activity' => "{$data['activity']['creator_name']} created HIRA on " . now()->timezone('GMT+6')->format('D, M d, Y g:i A'),
+        ]);
+
+        // Loop through sub-activities
+        foreach ($data['sub-activity'] as $subActivityData) {
+            $subActivity = $activity->subActivities()->create($subActivityData);
+
+            // Loop through hazards and associate with sub-activity
+            foreach ($subActivityData['hazards'] as $hazardData) {
+                $subActivity->hazards()->create(array_merge($hazardData, ['activity_id' => $activity->id]));
+            }
         }
 
+        return response()->json(['message' => 'HIRA data saved successfully'], 200);
     }
 
-    public function getHira(Request $request)
+    public function editHira(Request $request)
+    {
+        $data = $request->all();
+
+        // Fetch the activity by activity_id
+        $activity = Activity::find($data['activity']['activity_id']);
+
+        if (!$activity) {
+            return response()->json(['message' => 'Activity not found'], 404);
+        }
+
+        // Update the activity fields
+        $activity->update($data['activity']);
+
+        // Log the update
+        ActivityLog::create([
+            'activity_id' => $activity->id,
+            'activity' => "{$data['activity']['creator_name']} updated HIRA on " . now()->timezone('GMT+6')->format('D, M d, Y g:i A'),
+        ]);
+
+        // Delete sub-activities and associated hazards if IDs are provided
+        if (!empty($data['activity']['toBeDeletedSubActivity'])) {
+            foreach ($data['activity']['toBeDeletedSubActivity'] as $subActivityId) {
+                // Delete hazards for the sub-activity
+                Hazard::where('sub_activity_id', $subActivityId)->delete();
+
+                // Delete the sub-activity
+                SubActivity::where('id', $subActivityId)->delete();
+            }
+        }
+
+        // Delete hazards if IDs are provided
+        if (!empty($data['toBeDeletedHazard'])) {
+            Hazard::whereIn('id', $data['toBeDeletedHazard'])->delete();
+        }
+
+        // Process sub-activities
+        foreach ($data['sub-activity'] as $subActivityData) {
+            // Check if sub-activity exists
+            $subActivity = $activity->subActivities()->where('sub_activity_name', $subActivityData['sub_activity_name'])->first();
+
+            if ($subActivity) {
+                // Update existing sub-activity
+                $subActivity->update($subActivityData);
+            } else {
+                // Create new sub-activity
+                $subActivity = $activity->subActivities()->create($subActivityData);
+            }
+
+            // Process hazards
+            foreach ($subActivityData['hazards'] as $hazardData) {
+                // Check if hazard exists for the sub-activity
+                $hazard = $subActivity->hazards()->where('hazard_name', $hazardData['hazard_name'])->first();
+
+                if ($hazard) {
+                    // Update existing hazard
+                    $hazard->update($hazardData);
+                } else {
+                    // Create new hazard
+                    $subActivity->hazards()->create(array_merge($hazardData, ['activity_id' => $activity->id]));
+                }
+            }
+        }
+
+        return response()->json(['message' => 'HIRA data updated successfully'], 200);
+    }
+
+
+    public function getLogs($activityId)
+    {
+        // Fetch logs directly from the ActivityLog model where activity_id matches the provided ID
+        $logs = ActivityLog::where('activity_id', $activityId)->get();
+
+        // Check if logs are empty
+        if ($logs->isEmpty()) {
+            return response()->json([
+                'message' => 'No logs found for the given activity ID.'
+            ], 404); // 404 Not Found status
+        }
+
+        return response()->json($logs, 200); // 200 OK status
+    }
+
+    public function getActivities(Request $request)
     {
         $role_id = $request->input('role_id');
         $status = $request->input('status');
         $user_id = $request->input('user_id');
         $department = $request->input('department');
         $plant = $request->input('plant');
-        $unit = $request->input('division');
-        $query = DB::table('hiras')->orderBy('id', 'DESC');
-        if ($role_id == 3) {
-            $query->where('user_id', $user_id);
-        } elseif ($role_id == 4 || $role_id == 5 ) {
-            if ($plant == 'Corporate Office') {
+        $unit = $request->input('division'); // Unused variable in this query
+
+        // Initialize the base query
+        $query = DB::table('activities')->orderBy('id', 'DESC');
+
+        // Apply conditions based on the role
+        switch ($role_id) {
+            case 3:
+                $query->where('user_id', $user_id);
+                break;
+
+            case 4:
+            case 5:
+                $query->where('plant', $plant)
+                    ->when($plant === 'Corporate Office', function ($query) use ($department, $status) {
+                        return $query->where('department', $department)
+                            ->where('status', $status);
+                    }, function ($query) use ($status) {
+                        return $query->where('status', $status);
+                    });
+                break;
+
+            case 6:
                 $query->where('plant', $plant)
                     ->where('department', $department)
                     ->where('status', $status);
-            } else {
-                $query->where('plant', $plant)
-                    ->where('status', $status);
-            }
-        } elseif ($role_id == 6) {
-            $query->where('status', $status)
-                ->where('plant', $plant)
-                ->where('department', $department);
-        } elseif ($role_id == 7) {
-            $query->where('status', $status);
+                break;
+
+            case 7:
+                $query->where('status', $status);
+                break;
         }
-        $hiras = $query->get();
-        return response()->json($hiras);
+
+        // Execute the query
+        $activity = $query->get();
+
+        // Return the response
+        return response()->json($activity);
+    }
+
+
+//    public function getHira(Request $request)
+//    {
+//        $role_id = $request->input('role_id');
+//        $status = $request->input('status');
+//        $user_id = $request->input('user_id');
+//        $department = $request->input('department');
+//        $plant = $request->input('plant');
+//        $unit = $request->input('division');
+//        $query = DB::table('hiras')->orderBy('id', 'DESC');
+//        if ($role_id == 3) {
+//            $query->where('user_id', $user_id);
+//        } elseif ($role_id == 4 || $role_id == 5) {
+//            if ($plant == 'Corporate Office') {
+//                $query->where('plant', $plant)
+//                    ->where('department', $department)
+//                    ->where('status', $status);
+//            } else {
+//                $query->where('plant', $plant)
+//                    ->where('status', $status);
+//            }
+//        } elseif ($role_id == 6) {
+//            $query->where('status', $status)
+//                ->where('plant', $plant)
+//                ->where('department', $department);
+//        } elseif ($role_id == 7) {
+//            $query->where('status', $status);
+//        }
+//        $hiras = $query->get();
+//        return response()->json($hiras);
+//    }
+
+
+    public function getSubActivities($activity_id)
+    {
+        // Fetch the activity details
+        $activity = Activity::find($activity_id);
+
+        if (!$activity) {
+            return response()->json(['error' => 'Activity not found'], 404);
+        }
+
+        // Fetch sub-activities and their hazards
+        $subActivities = SubActivity::where('activity_id', $activity_id)
+            ->with('hazards')
+            ->get();
+
+        // Fetch logs directly from the ActivityLog model where activity_id matches the provided ID
+        $logs = ActivityLog::where('activity_id', $activity_id)
+            ->orderBy('created_at', 'desc') // Sort by created_at in descending order
+            ->get();
+
+
+        // Check if logs are empty
+        if ($logs->isEmpty()) {
+            return response()->json([
+                'message' => 'No logs found for the given activity ID.'
+            ], 404); // 404 Not Found status
+        }
+
+        // Structure the response
+        $response = [
+            'activity' => [
+                'activity_id' => $activity->id, // Include activity_id,
+                'activity_name' => $activity->activity_name,
+                'functional_type' => 'HIRA',
+                'plant' => $activity->plant,
+                'department' => $activity->department,
+                'division' => $activity->division,
+                'section' => $activity->section,
+                'unit' => $activity->unit,
+                'status' => $activity->status,
+                'year' => $activity->year,
+                'user_id' => $activity->user_id,
+                'creator_name' => $activity->creator_name,
+                'created_at' => $activity->created_at,
+            ],
+            'logs' => $logs,
+            'sub_activity' => $subActivities->map(function ($subActivity) {
+                return [
+                    'sub_activity_id' => $subActivity->id, // Include sub_activity_id
+                    'sub_activity_name' => $subActivity->sub_activity_name,
+                    'start_date' => $subActivity->start_date,
+                    'completion_date' => $subActivity->completion_date,
+                    'routine_non' => $subActivity->routine_non,
+                    'workers_involved' => $subActivity->workers_involved,
+                    'hazards' => $subActivity->hazards->map(function ($hazard) {
+                        return [
+                            'hazard_id' => $hazard->id, // Include hazard_id
+                            'hazard_name' => $hazard->hazard_name,
+                            'gross_likelihood' => $hazard->gross_likelihood,
+                            'g_impact' => $hazard->g_impact,
+                            'g_ranking' => $hazard->g_ranking,
+                            'g_ranking_value' => $hazard->g_ranking_value,
+                            'existing_control' => $hazard->existing_control,
+                            'further_action_required' => $hazard->further_action_required,
+                            'mitigation_measures' => $hazard->mitigation_measures,
+                            'residual_likelihood' => $hazard->residual_likelihood,
+                            'residual_impact' => $hazard->residual_impact,
+                            'residual_ranking' => $hazard->residual_ranking,
+                            'residual_ranking_value' => $hazard->residual_ranking_value,
+                        ];
+                    }),
+                ];
+            }),
+        ];
+
+        return response()->json($response, 200);
     }
 
     public function getHiraForms()
@@ -124,15 +317,48 @@ class HiraController extends Controller
         return response()->json($form);
     }
 
+    public function deleteActivity($id)
+    {
+        $activity = Activity::with('subActivities.hazards')->find($id);
+
+        if (!$activity) {
+            return response()->json(['message' => 'Activity not found'], 404);
+        }
+
+        try {
+            DB::transaction(function () use ($activity) {
+                // Log deletion BEFORE deleting the activity
+                \App\Models\ActivityLog::create([
+                    'activity_id' => $activity->id,
+                    'activity' => "Activity '{$activity->activity_name}' was deleted on " . now()->timezone('GMT+6')->format('D, M d, Y g:i A'),
+                ]);
+
+                // Delete the activity (subActivities and hazards will cascade)
+                $activity->delete();
+            });
+
+            return response()->json(['message' => 'Activity deleted successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting activity', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function changeStatus(Request $request)
     {
         $id = $request->input('id');
         $status = $request->input('status');
+        $functional_type = $request->input('functional_type');
+        $approved_by = $request->input('approved_by');
+        $approvedOrReject = $request->input('approvedOrReject');
 
-        if (strpos($id, 'E') === 0) {
+        if ($functional_type === 'EAI') {
             $model = EAI::find($id);
-        } elseif (strpos($id, 'H') === 0) {
-            $model = Hira::find($id);
+        } elseif ($functional_type === 'HIRA') {
+            $model = Activity::find($id);
+            ActivityLog::create([
+                'activity_id' => $id,
+                'activity' => "{$approved_by} {$approvedOrReject} {$functional_type} on " . now()->timezone('GMT+6')->format('D, M d, Y g:i A'),
+            ]);
         } else {
             $model = ArrRisk::find($id);
         }
@@ -144,6 +370,32 @@ class HiraController extends Controller
         return response()->json(['message' => 'You have Reviewed Successfully']);
     }
 
+    public function autoApprove()
+    {
+        try {
+            ActivityLog::info('Auto-approval task is running.');
+
+            // Fetch activities awaiting approval
+            $activities = Activity::where('status', 'Awaiting IMS Focal\'s Approval')->get();
+
+            if ($activities->isEmpty()) {
+                ActivityLog::info('No activities found for auto-approval.');
+                return;
+            }
+
+            foreach ($activities as $activity) {
+                $activity->status = 'Awaiting Head\'s Approval';
+                $activity->save();
+
+                ActivityLog::info("Auto-approved activity ID: {$activity->id}");
+            }
+
+            ActivityLog::info('Auto-approval task completed.');
+        } catch (\Exception $e) {
+            // Log any errors
+            ActivityLog::error('Auto-approval task failed: ' . $e->getMessage());
+        }
+    }
 
     public function addNewField(Request $request)
     {

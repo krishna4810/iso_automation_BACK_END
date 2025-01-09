@@ -39,13 +39,19 @@ Route::post('createOrUpdateUser', [UserController::class, 'createOrUpdateUser'])
 Route::get('checkRoles/{user_name}', [UserController::class, 'checkRoles']);
 Route::get('checkRoles/{user_name}', [UserController::class, 'checkRoles']);
 Route::get('getCreators/{creator_id}', [UserController::class, 'getCreators']);
+Route::get('autoApprove', [UserController::class, 'autoApprove']);
+
 
 // HIRA API CALLS
 Route::get('getDocumentNumber', [HiraController::class, 'getDocumentNumber']);
 Route::get('getHiraForms', [HiraController::class, 'getHiraForms']);
-Route::get('getHira', [HiraController::class, 'getHira']);
+Route::get('getActivities', [HiraController::class, 'getActivities']);
+Route::get('/getSubActivities/{activity_id}', [HiraController::class, 'getSubActivities']);
+Route::delete('/deleteActivity/{id}', [HiraController::class, 'deleteActivity']);
 Route::get('getComment', [CommentController::class, 'getComment']);
+
 Route::post('addHira', [HiraController::class, 'addHira']);
+Route::put('editHira', [HiraController::class, 'editHira']);
 Route::post('addComment', [CommentController::class, 'addComment']);
 Route::post('addNewField', [HiraController::class, 'addNewField']);
 Route::put('changeStatus', [HiraController::class, 'changeStatus']);
@@ -68,5 +74,7 @@ Route::get('getFilterParam', [DashboardController::class, 'getFilterParam']);
 Route::get('filterDashboard', [DashboardController::class, 'filterDashboard']);
 Route::post('generateReport', [DashboardController::class, 'generateReport']);
 
+//Logs
+Route::get('/hira/{id}/logs', [HiraController::class, 'getLogs']);
 
 
